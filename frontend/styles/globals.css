@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light dark; }
+body { @apply bg-neutral-950 text-neutral-100; }
+.card { @apply bg-neutral-900 border border-neutral-800 rounded-xl; }
+.btn { @apply px-4 py-2 rounded-lg border border-neutral-700 hover:bg-neutral-800; }
+input, textarea { @apply bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 outline-none; }
