@@ -1,12 +1,19 @@
 from __future__ import annotations
 import os, json, csv
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, TYPE_CHECKING
 import numpy as np
 import pandas as pd
 from PIL import Image
-import faiss
 
-from .embeddings import CLIPEncoder
+# Optional heavy deps: allow import without faiss/transformers for light tests
+try:  # pragma: no cover
+    import faiss  # type: ignore
+except Exception:  # pragma: no cover
+    faiss = None  # type: ignore
+
+if TYPE_CHECKING:  # only for type hints
+    from .embeddings import CLIPEncoder
+
 from .models import Product, FilterSpec
 
 def _compose_text(row: pd.Series) -> str:
@@ -113,7 +120,8 @@ class CatalogIndex:
             msg += " Please fix CSV formatting (quote fields containing commas)."
             print(msg)
 
-        # Set up the CLIP encoder this is what converts text/images to vectors
+        # Set up the CLIP encoder lazily to avoid heavy imports during simple tests
+        from .embeddings import CLIPEncoder  # local import
         self.encoder = CLIPEncoder()
 
         # Try to load cached embeddings if they match this catalog
@@ -146,6 +154,10 @@ class CatalogIndex:
                 pass
         # Build the FAISS index for fast similarity search
         # Inner product works well with normalized CLIP embeddings
+        if faiss is None:
+            raise ImportError(
+                "faiss-cpu is required for CatalogIndex; install backend requirements."
+            )
         self.index = faiss.IndexFlatIP(self.embeddings.shape[1])
         self.index.add(_ensure_float32(self.embeddings))
         self.id_map = list(self.df["id"].values)  # Keep track of which row is which
