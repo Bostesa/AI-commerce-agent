@@ -26,14 +26,24 @@ export default function RootLayout({
                 <div className="h-8 w-8 rounded-md bg-emerald-600 grid place-items-center font-semibold">AI</div>
                 <div className="font-semibold">AI Commerce Agent</div>
               </Link>
-              <a
-                href={`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/docs`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm text-neutral-300 hover:text-white"
-              >
-                API Docs
-              </a>
+              <div className="flex items-center gap-4">
+                <a
+                  href={`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/docs`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-neutral-300 hover:text-white"
+                >
+                  Live Docs
+                </a>
+                <a
+                  href="https://github.com/Bostesa/AI-commerce-agent/blob/main/docs/API.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-neutral-300 hover:text-white"
+                >
+                  GitHub Docs
+                </a>
+              </div>
             </div>
           </header>
           <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
