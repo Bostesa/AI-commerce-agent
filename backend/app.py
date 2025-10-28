@@ -21,6 +21,13 @@ from agent.embeddings import CLIPEncoder
 APP_VERSION = "1.1.0"
 app = FastAPI(title="AI Commerce Agent API", version=APP_VERSION)
 
+# Include evaluation API endpoints
+try:
+    from evaluation.api_endpoints import router as eval_router
+    app.include_router(eval_router, prefix="/api/eval", tags=["evaluation"])
+except Exception as e:
+    print(f"Warning: Could not load evaluation endpoints: {e}")
+
 # CORS setup for local development with Next.js frontend
 allowed_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
 app.add_middleware(

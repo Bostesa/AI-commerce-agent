@@ -5,6 +5,8 @@ __pycache__/
 node_modules/
 frontend/.next/
 backend/vectors/
+backend/evaluation/results/*
+!backend/evaluation/results/.gitkeep
 *.pyc
 .DS_Store
 deploy.sh

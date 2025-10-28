@@ -1,0 +1,272 @@
+{
+  "text_recommend": [
+    {
+      "query_id": "text_001",
+      "query": "breathable athletic t-shirt under $30",
+      "relevant_ids": ["tee-001", "tee-002", "tee-003", "tee-004"],
+      "highly_relevant_ids": ["tee-001", "tee-002"],
+      "expected_intent": "TEXT_RECOMMEND",
+      "expected_filters": {
+        "category": "t-shirt",
+        "price_max": 30.0
+      },
+      "notes": "Should return Nike and Adidas athletic tees, exclude H&M basic at $7.99 as not athletic"
+    },
+    {
+      "query_id": "text_002",
+      "query": "nike running shoes",
+      "relevant_ids": ["snkr-001"],
+      "highly_relevant_ids": ["snkr-001"],
+      "expected_intent": "TEXT_RECOMMEND",
+      "expected_filters": {
+        "brand": "Nike",
+        "category": "sneakers"
+      },
+      "notes": "Nike Revolution is the running shoe, should not include Jordan (basketball)"
+    },
+    {
+      "query_id": "text_003",
+      "query": "warm fleece hoodie for everyday wear",
+      "relevant_ids": ["hood-001", "hood-002", "hood-003", "hood-004"],
+      "highly_relevant_ids": ["hood-001", "hood-002", "hood-003"],
+      "expected_intent": "TEXT_RECOMMEND",
+      "expected_filters": {
+        "category": "hoodie"
+      },
+      "notes": "Should exclude Balenciaga luxury $895 hoodie from top results"
+    },
+    {
+      "query_id": "text_004",
+      "query": "adidas shoes under $70",
+      "relevant_ids": ["snkr-002"],
+      "highly_relevant_ids": ["snkr-002"],
+      "expected_intent": "TEXT_RECOMMEND",
+      "expected_filters": {
+        "brand": "Adidas",
+        "category": "sneakers",
+        "price_max": 70.0
+      },
+      "notes": "Should return Duramo SL at $60, exclude Yeezy at $230"
+    },
+    {
+      "query_id": "text_005",
+      "query": "budget basic t-shirt",
+      "relevant_ids": ["tee-004", "tee-005"],
+      "highly_relevant_ids": ["tee-005"],
+      "expected_intent": "TEXT_RECOMMEND",
+      "expected_filters": {
+        "category": "t-shirt"
+      },
+      "notes": "H&M at $7.99 and Uniqlo at $19.9 are budget options"
+    },
+    {
+      "query_id": "text_006",
+      "query": "quick-dry gym shorts",
+      "relevant_ids": ["short-002", "short-003", "short-004"],
+      "highly_relevant_ids": ["short-002"],
+      "expected_intent": "TEXT_RECOMMEND",
+      "expected_filters": {
+        "category": "shorts"
+      },
+      "notes": "Focus on athletic/training shorts, not casual"
+    },
+    {
+      "query_id": "text_007",
+      "query": "hiking backpack with ventilation",
+      "relevant_ids": ["bp-003", "bp-004"],
+      "highly_relevant_ids": ["bp-003"],
+      "expected_intent": "TEXT_RECOMMEND",
+      "expected_filters": {
+        "category": "backpack"
+      },
+      "notes": "Deuter Trail has explicit ventilation features"
+    },
+    {
+      "query_id": "text_008",
+      "query": "wireless headphones under $50",
+      "relevant_ids": [],
+      "highly_relevant_ids": [],
+      "expected_intent": "TEXT_RECOMMEND",
+      "expected_filters": {
+        "category": "headphones",
+        "price_max": 50.0
+      },
+      "notes": "Edge case: no wireless headphones under $50 in catalog. Sony at $25 is wired."
+    },
+    {
+      "query_id": "text_009",
+      "query": "laptop backpack for business",
+      "relevant_ids": ["bp-002"],
+      "highly_relevant_ids": ["bp-002"],
+      "expected_intent": "TEXT_RECOMMEND",
+      "expected_filters": {
+        "category": "backpack"
+      },
+      "notes": "Samsonite designed for laptops and business use"
+    },
+    {
+      "query_id": "text_010",
+      "query": "premium designer sneakers",
+      "relevant_ids": ["snkr-006", "snkr-007"],
+      "highly_relevant_ids": ["snkr-006", "snkr-007"],
+      "expected_intent": "TEXT_RECOMMEND",
+      "expected_filters": {
+        "category": "sneakers"
+      },
+      "notes": "Jordan Retro at $185 and Yeezy at $230 are premium options"
+    }
+  ],
+  "intent_classification": [
+    {
+      "query_id": "intent_001",
+      "query": "show me comfortable running shoes",
+      "has_image": false,
+      "expected_intent": "TEXT_RECOMMEND"
+    },
+    {
+      "query_id": "intent_002",
+      "query": "",
+      "has_image": true,
+      "expected_intent": "IMAGE_SEARCH"
+    },
+    {
+      "query_id": "intent_003",
+      "query": "I want something like this but cheaper",
+      "has_image": true,
+      "expected_intent": "IMAGE_AND_TEXT"
+    },
+    {
+      "query_id": "intent_004",
+      "query": "hello how are you",
+      "has_image": false,
+      "expected_intent": "SMALLTALK"
+    },
+    {
+      "query_id": "intent_005",
+      "query": "what's your name",
+      "has_image": false,
+      "expected_intent": "SMALLTALK"
+    },
+    {
+      "query_id": "intent_006",
+      "query": "nike shoes under $100",
+      "has_image": false,
+      "expected_intent": "TEXT_RECOMMEND"
+    },
+    {
+      "query_id": "intent_007",
+      "query": "similar to this photo in blue",
+      "has_image": true,
+      "expected_intent": "IMAGE_AND_TEXT"
+    },
+    {
+      "query_id": "intent_008",
+      "query": "recommend breathable t-shirt",
+      "has_image": false,
+      "expected_intent": "TEXT_RECOMMEND"
+    }
+  ],
+  "filter_extraction": [
+    {
+      "query_id": "filter_001",
+      "query": "nike breathable t-shirt under $25",
+      "expected_filters": {
+        "brand": "Nike",
+        "category": "t-shirt",
+        "price_max": 25.0
+      }
+    },
+    {
+      "query_id": "filter_002",
+      "query": "adidas running shoes",
+      "expected_filters": {
+        "brand": "Adidas",
+        "category": "sneakers"
+      }
+    },
+    {
+      "query_id": "filter_003",
+      "query": "hoodie between $40 and $60",
+      "expected_filters": {
+        "category": "hoodie",
+        "price_min": 40.0,
+        "price_max": 60.0
+      }
+    },
+    {
+      "query_id": "filter_004",
+      "query": "comfortable shoes",
+      "expected_filters": {
+        "category": "sneakers"
+      }
+    },
+    {
+      "query_id": "filter_005",
+      "query": "puma training shorts under $30",
+      "expected_filters": {
+        "brand": "Puma",
+        "category": "shorts",
+        "price_max": 30.0
+      }
+    },
+    {
+      "query_id": "filter_006",
+      "query": "budget backpack",
+      "expected_filters": {
+        "category": "backpack"
+      }
+    },
+    {
+      "query_id": "filter_007",
+      "query": "under armour athletic gear",
+      "expected_filters": {
+        "brand": "Under Armour"
+      }
+    }
+  ],
+  "diversity_tests": [
+    {
+      "query_id": "div_001",
+      "query": "athletic shoes",
+      "relevant_ids": ["snkr-001", "snkr-002", "snkr-003", "snkr-004", "snkr-005"],
+      "expected_brands": ["Nike", "Adidas", "ASICS", "New Balance", "Skechers"],
+      "min_brand_diversity": 0.6,
+      "notes": "Should return variety of brands, not just Nike"
+    },
+    {
+      "query_id": "div_002",
+      "query": "workout clothes",
+      "relevant_ids": ["tee-001", "tee-002", "tee-003", "short-001", "short-002", "hood-001"],
+      "expected_categories": ["t-shirt", "shorts", "hoodie"],
+      "min_category_diversity": 0.5,
+      "notes": "Should include mix of shirts, shorts, and potentially hoodies"
+    }
+  ],
+  "edge_cases": [
+    {
+      "query_id": "edge_001",
+      "query": "luxury designer hoodie",
+      "relevant_ids": ["hood-005"],
+      "highly_relevant_ids": ["hood-005"],
+      "notes": "Balenciaga at $895 should appear for luxury query"
+    },
+    {
+      "query_id": "edge_002",
+      "query": "shoes under $20",
+      "relevant_ids": [],
+      "notes": "No shoes under $20 in catalog - should return empty or nearest match"
+    },
+    {
+      "query_id": "edge_003",
+      "query": "asdfghjkl",
+      "relevant_ids": [],
+      "notes": "Gibberish query - should gracefully handle"
+    },
+    {
+      "query_id": "edge_004",
+      "query": "t-shirt",
+      "relevant_ids": ["tee-001", "tee-002", "tee-003", "tee-004", "tee-005"],
+      "notes": "Generic category query - should return diverse t-shirts"
+    }
+  ]
+}

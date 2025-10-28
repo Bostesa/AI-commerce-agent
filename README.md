@@ -1,156 +1,159 @@
 # AI Commerce Agent
 
-Single agent that handles:
-- general chat
-- text based product recommendations
-- image based product search
-  - image plus text fusion works too
+A unified agent for conversational product recommendations supporting text queries, image search, and multimodal image+text fusion.
 
-Highlights:
-- Next.js and Tailwind frontend
-- Dockerfiles for backend and frontend with docker compose
-- Filters panel in the UI for brand category price and tag
-- Product details page with similar items and a compare view
-- Deterministic catalog from CSV
+**Tech Stack:** FastAPI, Next.js, CLIP embeddings, FAISS vector search, deterministic CSV catalog
 
----
+**Features:**
+- Single `/chat` endpoint handles all interaction types
+- Rule-based intent classification and filter extraction
+- CLIP-based semantic search with MMR diversity
+- Built-in ML evaluation dashboard
+- No external LLM required
 
-## Quick Start (no Docker)
+## Quick Start
 
-**Backend**
+**Docker (recommended):**
 ```bash
+docker compose up --build
+```
+- Backend: http://localhost:8000
+- Frontend: http://localhost:3000
+- Evaluation: http://localhost:3000/evaluation
+
+**Local Development:**
+```bash
+# Backend
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app:app --reload
-# API: http://localhost:8000/docs
-```
 
-**Frontend**
-```bash
+# Frontend
 cd frontend
 npm install
 npm run dev
-# UI: http://localhost:3000
 ```
-
-This project does not require a language model. The agent uses rules for intent and filters and embeddings for retrieval.
-
----
-## Docker (recommended)
-
-```bash
-docker compose up --build
-# backend: http://localhost:8000
-# frontend: http://localhost:3000
-```
-
-If you want to experiment with a local model later you can add an Ollama sidecar and call it from the router. For this demo we keep the system fully deterministic.
-
-Deterministic mode recommended for review:
-- Uses only `backend/data/catalog.csv` for images and buy links. No network calls. The repo ships in this mode.
-
-Optional real images and links:
-- If you want to experiment with enrichment you can add it back. In this repo we keep it off to keep the demo stable.
 
 ---
 
-## Agent API quick reference
+## API Reference
 
-`POST /chat`
-```json
-{
-  "messages": [{"role":"user","content":"recommend a breathable sports t-shirt under $30"}],
-  "image_base64": null,
-  "top_k": 8
-}
-```
-Response:
-```json
-{
-  "reply": "Here are 3 picks...",
-  "products": [{"id":"...","title":"...","image_url":"...","product_url":"..."}],
-  "trace": {"intent":"TEXT_RECOMMEND","used_tools":["text_vector_search"],"filters":{...}}
-}
-```
+### Core Endpoints
 
-Endpoints:
-- POST `/chat` single entry point for chat recommend and image search
-- POST `/image-search` multipart image only search
-- GET `/products/{id}` single product
-- GET `/meta` catalog brands categories and price range
-- GET `/similar/{id}` similar products
+**`POST /chat`** - Main unified endpoint
+- Accepts text queries, images, or both
+- Returns product recommendations with debug trace
+- Auto-extracts filters (brand, category, price, tags)
 
-Full reference lives in `docs/API.md` and in the Swagger UI at `/docs`.
+**`GET /products/{id}`** - Retrieve single product details
 
-`ChatRequest` accepts optional UI-provided `filters` which override/augment auto-extracted filters.
+**`GET /similar/{id}`** - Get similar products by ID
 
----
+**`GET /meta`** - Catalog metadata (brands, categories, price range)
 
-## Catalog schema
+**`POST /image-search`** - Image-only search (multipart form)
 
+### Documentation
+- Interactive API docs: http://localhost:8000/docs
+- Full API reference: `docs/API.md`
+
+### Catalog Format
 `backend/data/catalog.csv`:
 ```
 id,title,description,category,brand,price,currency,image_url,tags
 ```
 
-Replace with your data and restart.
-
-> Note: The demo catalog uses backend-hosted SVG thumbnails so the UI always renders images.
-
 ---
 
-## How this meets the brief
-- Single agent. `POST /chat` routes small talk text recommend image and image plus text with one pipeline
-- Predefined catalog. All results come from `backend/data/catalog.csv`
-- Text path. CLIP text embeddings feed FAISS. We apply strict filters then MMR for diversity
-- Image path. CLIP image embeddings or a fusion with text feed the same pipeline
-- UI. Next.js chat with drag and drop or paste image upload filters product details and compare
+## Architecture
 
-## Why this stack
+### Backend
+- **Framework:** FastAPI with Pydantic validation
+- **Embeddings:** CLIP ViT-B/32 (unified text/image space)
+- **Vector Search:** FAISS with inner product similarity
+- **Catalog:** CSV-based deterministic product database
+- **Diversity:** MMR (Maximal Marginal Relevance) post-processing
+- **Caching:** Embedding cache for fast restarts
 
-I chose Python with FastAPI for the backend because it lets me ship a small, typed API quickly. Pydantic models give me schema‑checked request/response objects and clear validation, and FastAPI generates OpenAPI docs at `/docs` out of the box. Running under Uvicorn keeps startup time low and works well in containers, so the development loop stays fast.
+### Frontend
+- **Framework:** Next.js 14 with React 18
+- **Styling:** Tailwind CSS
+- **Features:** Drag-and-drop image upload, filters panel, product comparison
+- **API Client:** Simple fetch-based communication
 
-For retrieval I use Sentence‑Transformers’ CLIP ViT‑B/32 together with FAISS. CLIP provides a single embedding space for both text and images, which means I can support text search, pure image search, and image‑plus‑text fusion without juggling multiple models. FAISS with inner‑product on normalized vectors is simple and fast on CPU for a small catalog. I cache the catalog embeddings on disk so restarts are instant after the first run.
+### Deployment
+- Docker Compose for single-command deployment
+- No reverse proxy required
+- CORS configured via environment variables
 
-I keep the product data in a CSV file to make the demo deterministic and easy to swap with another dataset. The loader is defensive about messy CSVs and normalizes missing columns. Thumbnails are served from the backend’s static folder, so the UI always renders even without external network access; this keeps the experience predictable for reviewers.
-
-On the frontend I use Next.js 14 with React 18 and Tailwind CSS. Next’s DX and file‑based routing keep the UI straightforward, while Tailwind keeps styling lightweight and consistent. The client calls the backend with simple `fetch` requests using a single environment variable (`NEXT_PUBLIC_BACKEND_URL`), which makes it trivial to point the UI at any running backend.
-
-I package both apps with Docker Compose to provide a reproducible environment: one command brings up the backend on port 8000 and the frontend on port 3000. Environment variables such as `ALLOWED_ORIGINS` and `NEXT_PUBLIC_BACKEND_URL` control cross‑origin access and service discovery so I don’t need any extra proxy layer.
-
-Finally, I kept tests and observability pragmatic: a couple of unit tests lock in the intent router and filtering logic, `/health` offers a quick status check, and the `/chat` response includes a debug trace so I can understand which tools and filters were applied to each recommendation.
-
-## What I did to raise quality
-- Deterministic default. The CSV is the source of truth for images and links
-- Diversity guarantees. We de duplicate by id and by title plus brand then fill inside the category before relaxing
-- Clear filters. Brand category and price are always enforced when set
-- Minimal tests. See `backend/tests/test_router_intents.py` and `backend/tests/test_tools_filters.py`
-
----
-
-## Intent and filters
-
-- The router chooses between `IMAGE_SEARCH` `TEXT_RECOMMEND` and `SMALLTALK`
-- Filters for brand category price and tag come from simple rules so the behavior is predictable
-
----
-
-## CI
-
-`.github/workflows/ci.yml` builds backend (pip) and frontend (Next.js) on pushes.
+### Quality Assurance
+- Deterministic routing (IMAGE_SEARCH / TEXT_RECOMMEND / SMALLTALK)
+- Strict filter enforcement (brand, category, price)
+- Result deduplication by ID and title+brand
+- Debug trace in all responses
+- Unit test coverage for intent routing and filter extraction
+- Health check endpoint at `/health`
 
 ---
 
 ## Testing
 
-Run backend unit tests (no large model downloads):
-
+### Unit Tests
 ```bash
 cd backend
 pytest -q
 ```
 
-CI runs these tests automatically on PRs/pushes.
+Tests cover:
+- Intent classification logic
+- Filter extraction rules
+- Product search and filtering
+
+### CI/CD
+Automated testing via GitHub Actions (`.github/workflows/ci.yml`)
+- Runs on all PRs and pushes
+- Validates backend and frontend builds
+
+---
+
+## ML Evaluation
+
+### Overview
+Built-in evaluation dashboard for measuring system performance against golden test queries.
+
+**Metrics Tracked:**
+- Retrieval Quality: Precision@K, Recall@K, NDCG@K, MRR, MAP
+- Classification: Intent accuracy with per-class breakdown
+- Extraction: Filter accuracy (brand, category, price)
+- Performance: Latency (p50, p95, p99), throughput
+- Diversity: Brand and category distribution
+
+### Usage
+
+**Web Dashboard:**
+```
+http://localhost:3000/evaluation
+```
+Click "Quick Eval (~1s)" for instant metrics visualization.
+
+**Command Line:**
+```bash
+cd backend
+python -m evaluation.evaluate_hybrid --mode quick --report html
+open evaluation/results/latest.html
+```
+
+**API Endpoints:**
+- `POST /api/eval/run` - Start evaluation job
+- `GET /api/eval/summary` - Get latest metrics
+- `GET /api/eval/history` - View past evaluations
+
+### Evaluation Modes
+- `quick` - Retrieval + Intent (~1s)
+- `all` - Complete evaluation (~5s)
+- `retrieval` - Ranking metrics only
+- `intent` - Classification metrics only
+- `performance` - Latency benchmarks only
 
 ---

@@ -48,3 +48,80 @@ export async function getSimilar(id: string, top_k: number = 6) {
   if (!res.ok) throw new Error(`Similar request failed: ${res.status}`);
   return res.json() as Promise<{ products: any[] }>;
 }
+
+// Eval API
+export type EvaluationSummary = {
+  metadata: {
+    start_time: string;
+    catalog_size: number;
+    duration_seconds: number;
+  };
+  key_metrics: {
+    'ndcg@5'?: number;
+    'precision@5'?: number;
+    'recall@5'?: number;
+    mrr?: number;
+    intent_accuracy?: number;
+    filter_accuracy?: number;
+    p95_latency_ms?: number;
+    throughput_qps?: number;
+  };
+};
+
+export type EvaluationStatus = {
+  job_id: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  mode: string;
+  started_at?: string;
+  completed_at?: string;
+  error?: string;
+};
+
+export type EvaluationHistory = {
+  evaluations: Array<{
+    filename: string;
+    timestamp: string;
+    duration_seconds: number;
+    catalog_size: number;
+    'ndcg@5': number;
+  }>;
+};
+
+export async function startEvaluation(mode: string = 'quick'): Promise<EvaluationStatus> {
+  const res = await fetch(`${BACKEND_URL}/api/eval/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode }),
+  });
+  if (!res.ok) throw new Error(`Evaluation start failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getEvaluationStatus(jobId: string): Promise<EvaluationStatus> {
+  const res = await fetch(`${BACKEND_URL}/api/eval/status/${jobId}`);
+  if (!res.ok) throw new Error(`Status check failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getEvaluationSummary(): Promise<EvaluationSummary> {
+  const res = await fetch(`${BACKEND_URL}/api/eval/summary`);
+  if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error('No evaluation results found. Run an evaluation first.');
+    }
+    throw new Error(`Summary fetch failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getEvaluationHistory(): Promise<EvaluationHistory> {
+  const res = await fetch(`${BACKEND_URL}/api/eval/history`);
+  if (!res.ok) throw new Error(`History fetch failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getEvaluationResults(jobId: string = 'latest'): Promise<any> {
+  const res = await fetch(`${BACKEND_URL}/api/eval/results/${jobId}`);
+  if (!res.ok) throw new Error(`Results fetch failed: ${res.status}`);
+  return res.json();
+}

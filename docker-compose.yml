@@ -2,6 +2,9 @@ services:
   backend:
     build: ./backend
     ports: [ "8000:8000" ]
+    volumes:
+      # Persist evaluation results between container restarts
+      - ./backend/evaluation/results:/app/evaluation/results
     environment:
       - CATALOG_PATH=/app/data/catalog.csv
       - ALLOWED_ORIGINS=http://localhost:3000

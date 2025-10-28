@@ -27,6 +27,13 @@ export default function RootLayout({
                 <div className="font-semibold">AI Commerce Agent</div>
               </Link>
               <div className="flex items-center gap-4">
+                <Link
+                  href="/evaluation"
+                  className="text-sm text-neutral-300 hover:text-white flex items-center gap-1"
+                >
+                  <span>📊</span>
+                  <span>Evaluation</span>
+                </Link>
                 <a
                   href={`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/docs`}
                   target="_blank"

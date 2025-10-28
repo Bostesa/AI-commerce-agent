@@ -261,6 +261,23 @@ export default function Home() {
           </div>
         </div>
 
+        {/* ML Evaluation Dashboard CTA */}
+        <Link href="/evaluation" className="block mt-6">
+          <div className="card p-4 bg-gradient-to-br from-emerald-600 to-emerald-700 border-emerald-500 hover:from-emerald-500 hover:to-emerald-600 transition-all cursor-pointer">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl">📊</span>
+              <h2 className="font-semibold text-white">ML Evaluation</h2>
+            </div>
+            <p className="text-sm text-emerald-50 opacity-90 mb-3">
+              View system metrics, run evaluations, and track performance over time.
+            </p>
+            <div className="flex items-center justify-between text-xs text-emerald-100">
+              <span>View Dashboard →</span>
+              <span className="opacity-75">Click to explore</span>
+            </div>
+          </div>
+        </Link>
+
         <div className="card p-4 mt-6">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">Suggested Prompts</h2>
