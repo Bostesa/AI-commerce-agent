@@ -36,35 +36,48 @@ def run_evaluation_task(job_id: str, mode: str, catalog_path: str, golden_querie
         _running_evals[job_id]["status"] = "running"
         _running_evals[job_id]["started_at"] = datetime.now().isoformat()
 
-        # Initialize evaluator
         evaluator = HybridSystemEvaluator(
             catalog_path=catalog_path,
             golden_queries_path=golden_queries_path
         )
 
-        # Run evaluation based on mode
         if mode == "all":
             results = evaluator.run_all_evaluations()
-        elif mode == "quick":
-            results = {
-                "retrieval": evaluator.evaluate_retrieval(k_values=[1, 3, 5]),
-                "intent_classification": evaluator.evaluate_intent_classification()
-            }
-            evaluator.results = results
-        elif mode == "retrieval":
-            results = {"retrieval": evaluator.evaluate_retrieval()}
-        elif mode == "intent":
-            results = {"intent_classification": evaluator.evaluate_intent_classification()}
-        elif mode == "filters":
-            results = {"filter_extraction": evaluator.evaluate_filter_extraction()}
-        elif mode == "diversity":
-            results = {"diversity": evaluator.evaluate_diversity()}
-        elif mode == "performance":
-            results = {"performance": evaluator.benchmark_performance()}
         else:
-            raise ValueError(f"Unknown mode: {mode}")
+            # Track timing for quick/individual modes
+            evaluator.start_time = datetime.now()
 
-        # Save results
+            if mode == "quick":
+                results = {
+                    "retrieval": evaluator.evaluate_retrieval(k_values=[1, 3, 5]),
+                    "intent_classification": evaluator.evaluate_intent_classification(),
+                    "filter_extraction": evaluator.evaluate_filter_extraction(),
+                    "performance": evaluator.benchmark_performance(num_iterations=20)
+                }
+            elif mode == "retrieval":
+                results = {"retrieval": evaluator.evaluate_retrieval()}
+            elif mode == "intent":
+                results = {"intent_classification": evaluator.evaluate_intent_classification()}
+            elif mode == "filters":
+                results = {"filter_extraction": evaluator.evaluate_filter_extraction()}
+            elif mode == "diversity":
+                results = {"diversity": evaluator.evaluate_diversity()}
+            elif mode == "performance":
+                results = {"performance": evaluator.benchmark_performance()}
+            else:
+                raise ValueError(f"Unknown mode: {mode}")
+
+            evaluator.end_time = datetime.now()
+            duration = (evaluator.end_time - evaluator.start_time).total_seconds()
+            results["metadata"] = {
+                "start_time": evaluator.start_time.isoformat(),
+                "end_time": evaluator.end_time.isoformat(),
+                "duration_seconds": duration,
+                "catalog_size": len(evaluator.catalog_df),
+                "catalog_path": catalog_path,
+                "mode": mode
+            }
+
         evaluator.results = results
         output_path = f"evaluation/results/{job_id}.json"
         evaluator.save_results(output_path)
@@ -127,6 +140,20 @@ async def get_evaluation_status(job_id: str):
     return EvaluationStatus(**_running_evals[job_id])
 
 
+@router.get("/results/latest")
+async def get_latest_results():
+    """Get most recent evaluation results."""
+    results_path = Path("evaluation/results/latest.json")
+
+    if not results_path.exists():
+        raise HTTPException(status_code=404, detail="No evaluation results found. Run an evaluation first.")
+
+    with open(results_path, 'r') as f:
+        results = json.load(f)
+
+    return results
+
+
 @router.get("/results/{job_id}")
 async def get_evaluation_results(job_id: str):
     """Get results of completed evaluation."""
@@ -141,20 +168,6 @@ async def get_evaluation_results(job_id: str):
     results_path = eval_data.get("results_path")
     if not results_path or not Path(results_path).exists():
         raise HTTPException(status_code=404, detail="Results file not found")
-
-    with open(results_path, 'r') as f:
-        results = json.load(f)
-
-    return results
-
-
-@router.get("/results/latest")
-async def get_latest_results():
-    """Get most recent evaluation results."""
-    results_path = Path("evaluation/results/latest.json")
-
-    if not results_path.exists():
-        raise HTTPException(status_code=404, detail="No evaluation results found. Run an evaluation first.")
 
     with open(results_path, 'r') as f:
         results = json.load(f)

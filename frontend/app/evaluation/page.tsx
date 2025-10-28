@@ -7,6 +7,7 @@ import {
   getEvaluationHistory,
   startEvaluation,
   getEvaluationStatus,
+  getEvaluationResults,
   type EvaluationSummary,
   type EvaluationHistory,
 } from '../../lib_api';
@@ -16,6 +17,7 @@ import { LoadingDots } from '../../components/LoadingDots';
 export default function EvaluationPage() {
   const [summary, setSummary] = useState<EvaluationSummary | null>(null);
   const [history, setHistory] = useState<EvaluationHistory | null>(null);
+  const [fullResults, setFullResults] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
@@ -30,12 +32,14 @@ export default function EvaluationPage() {
     setLoading(true);
     setError(null);
     try {
-      const [summaryData, historyData] = await Promise.all([
+      const [summaryData, historyData, resultsData] = await Promise.all([
         getEvaluationSummary().catch(() => null),
         getEvaluationHistory().catch(() => ({ evaluations: [] })),
+        getEvaluationResults().catch(() => null),
       ]);
       setSummary(summaryData);
       setHistory(historyData);
+      setFullResults(resultsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load evaluation data');
     } finally {
@@ -53,9 +57,9 @@ export default function EvaluationPage() {
       const { job_id } = await startEvaluation(mode);
       setProgress(`Running ${mode} evaluation...`);
 
-      // Poll for completion
+      // Poll every 2s until done
       let attempts = 0;
-      const maxAttempts = 300; // 10 minutes (300 * 2s)
+      const maxAttempts = 300;
 
       const poll = async () => {
         attempts++;
@@ -69,7 +73,7 @@ export default function EvaluationPage() {
 
         try {
           const status = await getEvaluationStatus(job_id);
-          console.log('Evaluation status:', status); // Debug log
+          console.log('Evaluation status:', status);
 
           if (status.status === 'completed') {
             setProgress('Complete! Reloading data...');
@@ -81,21 +85,20 @@ export default function EvaluationPage() {
             throw new Error(status.error || 'Evaluation failed');
           } else {
             setProgress(`${status.status}... (attempt ${attempts})`);
-            setTimeout(poll, 2000); // Poll again in 2 seconds
+            setTimeout(poll, 2000);
           }
         } catch (err) {
-          console.error('Polling error:', err); // Debug log
+          console.error('Polling error:', err);
           setError(err instanceof Error ? err.message : 'Status check failed');
           setRunning(false);
           setProgress('');
         }
       };
 
-      // Start polling
       setTimeout(poll, 2000);
 
     } catch (err) {
-      console.error('Evaluation error:', err); // Debug log
+      console.error('Evaluation error:', err);
       setError(err instanceof Error ? err.message : 'Evaluation failed');
       setRunning(false);
       setProgress('');
@@ -180,55 +183,55 @@ export default function EvaluationPage() {
           <h2 className="text-2xl font-semibold mb-4">Key Metrics</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <MetricCard
-              label="NDCG@5"
-              value={summary.key_metrics['ndcg@5']?.toFixed(4) || 'N/A'}
-              description="Ranking quality"
+              label="Ranking Quality"
+              value={summary.key_metrics['ndcg@5']?.toFixed(3) || 'N/A'}
+              description="How well results are ordered"
               color="bg-gradient-to-br from-blue-500 to-blue-600"
             />
             <MetricCard
               label="Intent Accuracy"
               value={
                 summary.key_metrics.intent_accuracy
-                  ? `${(summary.key_metrics.intent_accuracy * 100).toFixed(2)}%`
+                  ? `${(summary.key_metrics.intent_accuracy * 100).toFixed(1)}%`
                   : 'N/A'
               }
-              description="Classification accuracy"
+              description="Correct intent classification"
               color="bg-gradient-to-br from-green-500 to-green-600"
             />
             <MetricCard
               label="Filter Accuracy"
               value={
                 summary.key_metrics.filter_accuracy
-                  ? `${(summary.key_metrics.filter_accuracy * 100).toFixed(2)}%`
+                  ? `${(summary.key_metrics.filter_accuracy * 100).toFixed(1)}%`
                   : 'N/A'
               }
-              description="Filter extraction"
+              description="Correct filter extraction"
               color="bg-gradient-to-br from-purple-500 to-purple-600"
             />
             <MetricCard
-              label="p95 Latency"
+              label="Response Time"
               value={
                 summary.key_metrics.p95_latency_ms
-                  ? `${summary.key_metrics.p95_latency_ms.toFixed(2)}ms`
+                  ? `${summary.key_metrics.p95_latency_ms.toFixed(0)}ms`
                   : 'N/A'
               }
-              description="Response time"
+              description="95th percentile latency"
               color="bg-gradient-to-br from-orange-500 to-orange-600"
             />
           </div>
 
           <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6 mb-6">
-            <h3 className="text-xl font-semibold mb-4">Detailed Retrieval Metrics</h3>
+            <h3 className="text-xl font-semibold mb-4">Search Quality</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <DetailMetric
-                label="Precision@5"
-                value={summary.key_metrics['precision@5']?.toFixed(4) || 'N/A'}
+                label="Precision"
+                value={summary.key_metrics['precision@5']?.toFixed(3) || 'N/A'}
               />
               <DetailMetric
-                label="Recall@5"
-                value={summary.key_metrics['recall@5']?.toFixed(4) || 'N/A'}
+                label="Recall"
+                value={summary.key_metrics['recall@5']?.toFixed(3) || 'N/A'}
               />
-              <DetailMetric label="MRR" value={summary.key_metrics.mrr?.toFixed(4) || 'N/A'} />
+              <DetailMetric label="First Hit" value={summary.key_metrics.mrr?.toFixed(3) || 'N/A'} />
               <DetailMetric
                 label="Throughput"
                 value={
@@ -255,6 +258,42 @@ export default function EvaluationPage() {
               </div>
             </div>
           </div>
+
+          {fullResults?.diversity && (
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6 mb-6">
+              <h3 className="text-xl font-semibold mb-4">Diversity (Full Eval Only)</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <DetailMetric
+                  label="Brand Diversity @5"
+                  value={fullResults.diversity.aggregated?.['brand_diversity@5']?.mean?.toFixed(3) || 'N/A'}
+                />
+                <DetailMetric
+                  label="Category Diversity @5"
+                  value={fullResults.diversity.aggregated?.['category_diversity@5']?.mean?.toFixed(3) || 'N/A'}
+                />
+                <DetailMetric
+                  label="Test Queries"
+                  value={fullResults.diversity.num_queries || 0}
+                />
+              </div>
+            </div>
+          )}
+
+          {fullResults?.edge_cases && (
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6 mb-6">
+              <h3 className="text-xl font-semibold mb-4">Edge Cases (Full Eval Only)</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <DetailMetric
+                  label="Graceful Handling"
+                  value={`${(fullResults.edge_cases.graceful_rate * 100).toFixed(1)}%`}
+                />
+                <DetailMetric
+                  label="Test Cases"
+                  value={fullResults.edge_cases.num_cases || 0}
+                />
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -266,8 +305,8 @@ export default function EvaluationPage() {
               <thead className="border-b-2 border-neutral-700">
                 <tr>
                   <th className="py-3 px-4 font-semibold text-neutral-300">Date</th>
-                  <th className="py-3 px-4 font-semibold text-neutral-300">NDCG@5</th>
-                  <th className="py-3 px-4 font-semibold text-neutral-300">Catalog</th>
+                  <th className="py-3 px-4 font-semibold text-neutral-300">Quality Score</th>
+                  <th className="py-3 px-4 font-semibold text-neutral-300">Products</th>
                   <th className="py-3 px-4 font-semibold text-neutral-300">Duration</th>
                 </tr>
               </thead>
@@ -281,7 +320,7 @@ export default function EvaluationPage() {
                       {new Date(evaluation.timestamp).toLocaleString()}
                     </td>
                     <td className="py-3 px-4 font-mono text-emerald-400">
-                      {evaluation['ndcg@5']?.toFixed(4) || 'N/A'}
+                      {evaluation['ndcg@5']?.toFixed(3) || 'N/A'}
                     </td>
                     <td className="py-3 px-4 text-neutral-400">{evaluation.catalog_size}</td>
                     <td className="py-3 px-4 text-neutral-400">{evaluation.duration_seconds?.toFixed(1)}s</td>

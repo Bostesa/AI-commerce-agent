@@ -543,8 +543,7 @@ class HybridSystemEvaluator:
 
         print(f"\n[Evaluator] Results saved to {output_path}")
 
-        # Also save timestamped version
-        # Use start_time if available, otherwise use current time
+        # Save timestamped version too
         timestamp_obj = self.start_time if self.start_time else datetime.now()
         timestamp = timestamp_obj.strftime('%Y%m%d_%H%M%S')
         timestamped_path = output_path.replace("latest.json", f"eval_{timestamp}.json")

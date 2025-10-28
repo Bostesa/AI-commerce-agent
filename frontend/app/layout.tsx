@@ -42,14 +42,6 @@ export default function RootLayout({
                 >
                   Live Docs
                 </a>
-                <a
-                  href="https://github.com/Bostesa/AI-commerce-agent/blob/main/docs/API.md"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-neutral-300 hover:text-white"
-                >
-                  GitHub Docs
-                </a>
               </div>
             </div>
           </header>
